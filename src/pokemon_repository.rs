@@ -1,7 +1,13 @@
 use anyhow::Context;
 use serde::Deserialize;
 
+pub struct PokemonRepository {
+    base_url: String,
+    client: reqwest::Client,
+}
+
 #[derive(Deserialize, Debug)]
+#[allow(dead_code)]
 pub struct Pokemon {
     pub name: String,
     pub height: u32,
@@ -16,17 +22,28 @@ pub enum GetPokemonError {
     Other(#[from] anyhow::Error),
 }
 
-pub async fn get_pokemon(name: String) -> Result<Pokemon, GetPokemonError> {
-    let url = format!("https://pokeapi.co/api/v2/pokemon/{}", name);
-    let response = reqwest::get(&url).await.context("GET request failed")?;
+impl PokemonRepository {
+    pub fn new(base_url: String, client: reqwest::Client) -> Self {
+        Self { base_url, client }
+    }
 
-    if response.status().is_success() {
-        let pokemon = response
-            .json()
+    pub async fn get_pokemon(&self, name: String) -> Result<Pokemon, GetPokemonError> {
+        let url = format!("{}/{}", self.base_url, name);
+        let response = self
+            .client
+            .get(&url)
+            .send()
             .await
-            .context("failed to deserialize pokemon")?;
-        Ok(pokemon)
-    } else {
-        Err(GetPokemonError::NotFound)
+            .context("GET request failed")?;
+
+        if response.status().is_success() {
+            let pokemon = response
+                .json()
+                .await
+                .context("failed to deserialize pokemon")?;
+            Ok(pokemon)
+        } else {
+            Err(GetPokemonError::NotFound)
+        }
     }
 }
