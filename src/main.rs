@@ -22,7 +22,7 @@ async fn main() -> anyhow::Result<()> {
     match args.command {
         Command::Get { name } => {
             let pokemon = pokemon_repository::get_pokemon(name).await?;
-            dbg!(&pokemon);
+            println!("{}", pokemon)
         }
     };
 

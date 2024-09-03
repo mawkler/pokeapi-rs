@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use anyhow::{anyhow, Context};
 use serde::Deserialize;
 
@@ -6,6 +8,12 @@ pub struct Pokemon {
     pub name: String,
     pub height: u32,
     pub weight: u32,
+}
+
+impl Display for Pokemon {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}: {} cm, {} hg", self.name, self.height, self.weight)
+    }
 }
 
 #[derive(thiserror::Error, Debug)]
