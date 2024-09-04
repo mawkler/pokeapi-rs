@@ -1,4 +1,5 @@
 use clap::{Parser, Subcommand};
+use pokemon_repository::PokemonRepository;
 
 mod pokemon_repository;
 
@@ -18,10 +19,12 @@ struct Args {
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     let args = Args::parse();
+    let base_url = "https://pokeapi.co/api/v2/pokemon".to_string();
+    let repository = PokemonRepository::new(base_url);
 
     match args.command {
         Command::Get { name } => {
-            let pokemon = pokemon_repository::get_pokemon(name).await?;
+            let pokemon = repository.get_pokemon(&name).await?;
             println!("{}", pokemon)
         }
     };
