@@ -11,14 +11,14 @@ pub enum Command {
 
 #[derive(Parser)]
 #[command(version, about = "Fetches Pokémon from PokéAPI.")]
-struct Args {
+struct Cli {
     #[command(subcommand)]
     command: Command,
 }
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    let args = Args::parse();
+    let args = Cli::parse();
     let base_url = "https://pokeapi.co/api/v2/pokemon".to_string();
     let repository = PokemonRepository::new(base_url);
 
