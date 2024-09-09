@@ -24,8 +24,11 @@ async fn main() -> anyhow::Result<()> {
 
     match args.command {
         Command::Get { name } => {
-            let pokemon = repository.get_pokemon(&name).await?;
-            println!("{}", pokemon)
+            if let Some(pokemon) = repository.get_pokemon(&name).await? {
+                println!("{pokemon}");
+            } else {
+                println!("Pokemon {name} not found")
+            }
         }
     };
 
