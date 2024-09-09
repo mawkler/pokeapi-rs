@@ -1,5 +1,5 @@
 use clap::{Parser, Subcommand};
-use pokemon_repository::PokemonRepository;
+use pokemon_repository::{GetPokemonError, PokemonRepository};
 
 mod pokemon_repository;
 
@@ -17,17 +17,20 @@ struct Cli {
 }
 
 #[tokio::main]
-async fn main() -> anyhow::Result<()> {
+async fn main() -> Result<(), String> {
     let args = Cli::parse();
     let base_url = "https://pokeapi.co/api/v2/pokemon".to_string();
     let repository = PokemonRepository::new(base_url);
 
     match args.command {
         Command::Get { name } => {
-            if let Some(pokemon) = repository.get_pokemon(&name).await? {
-                println!("{pokemon}");
-            } else {
-                println!("Pokemon {name} not found")
+            let pokemon = repository.get_pokemon(&name).await;
+            match pokemon {
+                Ok(pkm) => println!("{pkm}"),
+                Err(GetPokemonError::NotFound) => println!("pokemon {name} not found"),
+                Err(GetPokemonError::Other(err)) => {
+                    println!("something went wrong when fetching pokemon {name}: {err}")
+                }
             }
         }
     };
