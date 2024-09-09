@@ -9,8 +9,8 @@ pub enum Command {
     Get { name: String },
 }
 
+/// Fetches Pokémon from PokéAPI.
 #[derive(Parser)]
-#[command(version, about = "Fetches Pokémon from PokéAPI.")]
 struct Cli {
     #[command(subcommand)]
     command: Command,
