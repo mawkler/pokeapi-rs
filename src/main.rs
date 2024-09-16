@@ -24,7 +24,7 @@ async fn main() -> Result<(), String> {
 
     match args.command {
         Command::Get { name } => {
-            let pokemon = repository.get_pokemon(&name).await;
+            let pokemon = repository.get(&name).await;
             match pokemon {
                 Ok(pkm) => println!("{pkm}"),
                 Err(GetPokemonError::NotFound) => println!("pokemon {name} not found"),

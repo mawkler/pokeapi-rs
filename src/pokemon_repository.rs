@@ -1,3 +1,5 @@
+use anyhow::anyhow;
+use anyhow::Context;
 use serde::Deserialize;
 use std::fmt::Display;
 
@@ -18,16 +20,12 @@ pub struct PokemonRepository {
     pub base_url: String,
 }
 
-#[derive(Debug)]
+#[derive(thiserror::Error, Debug)]
 pub enum GetPokemonError {
+    #[error("Pokemon not found")]
     NotFound,
-    Other(String),
-}
-
-impl From<reqwest::Error> for GetPokemonError {
-    fn from(value: reqwest::Error) -> Self {
-        GetPokemonError::Other(value.to_string())
-    }
+    #[error("Failed to get pokemon: {0}")]
+    Other(#[from] anyhow::Error),
 }
 
 impl PokemonRepository {
@@ -35,14 +33,20 @@ impl PokemonRepository {
         Self { base_url }
     }
 
-    pub async fn get_pokemon(&self, name: &str) -> Result<Pokemon, GetPokemonError> {
+    pub async fn get(&self, name: &str) -> Result<Pokemon, GetPokemonError> {
         let url = format!("{}/{}", self.base_url, name);
-        let response = reqwest::get(&url).await?;
+        let response = reqwest::get(&url).await.context("GET request failed")?;
 
         match response.status() {
             reqwest::StatusCode::NOT_FOUND => Err(GetPokemonError::NotFound),
-            reqwest::StatusCode::OK => Ok(response.json().await?),
-            otherwise => Err(GetPokemonError::Other(otherwise.to_string())),
+            reqwest::StatusCode::OK => {
+                let pokemon = response
+                    .json()
+                    .await
+                    .context("failed to deserialize pokemon")?;
+                Ok(pokemon)
+            }
+            otherwise => Err(anyhow!("failed to GET pokemon: {}", otherwise).into()),
         }
     }
 }
@@ -75,7 +79,7 @@ mod test {
         let repository = PokemonRepository::new(mock_server.uri());
 
         // When
-        let charmander = repository.get_pokemon("charmander").await.unwrap();
+        let charmander = repository.get("charmander").await.unwrap();
 
         // Then
         assert_eq!(charmander.name, "charmander");
@@ -98,7 +102,7 @@ mod test {
         let repository = PokemonRepository::new(mock_server.uri());
 
         // When
-        let response = repository.get_pokemon("charmander").await;
+        let response = repository.get("charmander").await;
 
         // Then
         assert!(matches!(response, Err(GetPokemonError::NotFound)));
